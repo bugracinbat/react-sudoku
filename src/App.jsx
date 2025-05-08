@@ -2,17 +2,17 @@ import reactLogo from "./assets/react.svg";
 import viteLogo from "/vite.svg";
 import "./App.css";
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import SudokuBoard from "./SudokuBoard";
 import "./App.css";
 
 function App() {
-  const [dark, setDark] = useState(true);
   const [difficulty, setDifficulty] = useState("medium");
   const [timer, setTimer] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [gameStatus, setGameStatus] = useState("");
+  const boardRef = useRef(null);
   const [bestTimes, setBestTimes] = useState(() => {
     const saved = localStorage.getItem("sudokuBestTimes");
     return saved
@@ -49,11 +49,20 @@ function App() {
     setIsPlaying(true);
     setIsPaused(false);
     setGameStatus("");
+    if (boardRef.current) {
+      boardRef.current.generateNewPuzzle();
+    }
   }, []);
 
   const handlePause = useCallback(() => {
     setIsPaused((prev) => !prev);
     setGameStatus((prev) => (prev === "Paused" ? "" : "Paused"));
+  }, []);
+
+  const handleHint = useCallback(() => {
+    if (boardRef.current) {
+      boardRef.current.handleHint();
+    }
   }, []);
 
   // Timer effect
@@ -84,12 +93,7 @@ function App() {
   };
 
   return (
-    <div className={dark ? "sudoku-app dark" : "sudoku-app"}>
-      <div className="theme-toggle">
-        <button onClick={() => setDark((d) => !d)}>
-          {dark ? "🌙 Dark" : "☀️ Light"}
-        </button>
-      </div>
+    <div className="sudoku-app">
       <div className="sudoku-card">
         <h1>Sudoku Game</h1>
 
@@ -120,6 +124,13 @@ function App() {
                 {isPaused ? "▶️ Resume" : "⏸️ Pause"}
               </button>
             )}
+            <button
+              className="hint-button"
+              onClick={handleHint}
+              disabled={!isPlaying || isPaused}
+            >
+              Get Hint
+            </button>
             <button className="new-game-btn" onClick={handleNewGame}>
               New Game
             </button>
@@ -127,7 +138,7 @@ function App() {
         </div>
 
         <SudokuBoard
-          dark={dark}
+          ref={boardRef}
           difficulty={difficulty}
           onGameStart={handleGameStart}
           onGameComplete={handleGameComplete}
